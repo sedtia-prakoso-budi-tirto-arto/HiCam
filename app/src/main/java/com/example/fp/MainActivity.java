@@ -27,10 +27,24 @@ public class MainActivity extends AppCompatActivity {
                 openKameraView();
             }
         });
+
+        View galeriView = findViewById(R.id.galeriView);
+        galeriView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openGaleriView();
+            }
+        });
     }
 
     private void openKameraView() {
         Intent kamera = new Intent(this, KameraView.class);
         startActivity(kamera);
     }
+
+    private void openGaleriView() {
+        Intent galeri = new Intent(this, GaleriView.class);
+        startActivity(galeri);
+    }
+
 }

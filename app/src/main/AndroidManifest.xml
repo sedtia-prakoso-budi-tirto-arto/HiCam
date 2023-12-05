@@ -26,6 +26,12 @@
             android:name=".KameraView"
             android:exported="true">
         </activity>
+
+        <activity
+            android:name=".GaleriView"
+            android:exported="true">
+        </activity>
+
     </application>
 
 </manifest>
