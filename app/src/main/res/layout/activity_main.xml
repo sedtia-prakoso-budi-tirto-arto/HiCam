@@ -88,7 +88,7 @@
                 app:layout_constraintVertical_bias="0.48" />
 
             <ImageView
-                android:id="@+id/imageView10"
+                android:id="@+id/Peta"
                 android:layout_width="153dp"
                 android:layout_height="100dp"
                 android:layout_marginStart="10dp"
