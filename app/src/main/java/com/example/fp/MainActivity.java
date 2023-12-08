@@ -221,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
                     // Hentikan pembaruan lokasi setelah mendapatkan satu pembaruan
                     locationManager.removeUpdates(this);
-                    requestLocation(latitude, longitude);
+//                    requestLocation(latitude, longitude);
                 }
 
                 @Override
@@ -344,13 +344,7 @@ public class MainActivity extends AppCompatActivity {
         mStringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-//                if (response.length() >= 500) {
-//                    // Jika panjang response cukup, tampilkan substring
-//                    Toast.makeText(getApplicationContext(), "Response :" + response.substring(0, 500), Toast.LENGTH_LONG).show();
-//                } else {
-//                    // Jika panjang response kurang dari 500, tampilkan response utuh
-//                    Toast.makeText(getApplicationContext(), "Response :" + response, Toast.LENGTH_LONG).show();
-//                }
+
                 try {
                     JSONObject jsonResponse = new JSONObject(response);
 
