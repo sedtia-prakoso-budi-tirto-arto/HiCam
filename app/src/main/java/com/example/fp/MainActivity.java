@@ -1,19 +1,35 @@
 package com.example.fp;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.widget.Toast;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -24,6 +40,13 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -34,13 +57,17 @@ public class MainActivity extends AppCompatActivity {
     private LocationListener locationListener;
     AlertDialog alertDialog;
 
+    private RequestQueue mRequestQueue;
+    private StringRequest mStringRequest;
 
     ArrayList<String> permissionsList;
-    String[] permissionsStr = {Manifest.permission.CAMERA,
+    String[] permissionsStr = {
+            Manifest.permission.CAMERA,
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.INTERNET,
     };
     int permissionsCount = 0;
     ActivityResultLauncher<String[]> permissionsLauncher =
@@ -81,6 +108,15 @@ public class MainActivity extends AppCompatActivity {
         View camView = findViewById(R.id.camView);
         camView.setOnClickListener(v -> openKameraView());
 
+        View aboutView = findViewById(R.id.about);
+        aboutView.setOnClickListener(v -> sendAndRequestResponse());
+
+//        View galView = findViewById(R.id.galeriView);
+//        galView.setOnClickListener(v -> openGalleryView());
+
+        View AlbView = findViewById(R.id.galeriView);
+        AlbView.setOnClickListener(v -> openAlbumView());
+
         View imageViewGetLocation = findViewById(R.id.Peta);
 
         imageViewGetLocation.setOnClickListener(v -> requestLocationUpdates());
@@ -90,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
         askForPermissions(permissionsList);
 
     }
+
 
     private void askForPermissions(ArrayList<String> permissionsList) {
         String[] newPermissionStr = new String[permissionsList.size()];
@@ -129,6 +166,16 @@ public class MainActivity extends AppCompatActivity {
         startActivity(kamera);
     }
 
+    private void openGalleryView(){
+        Intent gallery = new Intent(this, GaleriView.class);
+        startActivity(gallery);
+    }
+
+    private void openAlbumView(){
+        Intent album = new Intent(this, AlbumView.class);
+        startActivity(album);
+    }
+
 
     private void initializeLocationManager() {
         // Check if the app has the location permission
@@ -165,14 +212,16 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onLocationChanged(Location location) {
                     // Mendapatkan longitude dan latitude
-                    double longitude = location.getLongitude();
                     double latitude = location.getLatitude();
+                    double longitude = location.getLongitude();
+
 
                     // Menampilkan Toast dengan informasi lokasi
                     Toast.makeText(MainActivity.this, "Longitude: " + longitude + "\nLatitude: " + latitude, Toast.LENGTH_SHORT).show();
 
                     // Hentikan pembaruan lokasi setelah mendapatkan satu pembaruan
                     locationManager.removeUpdates(this);
+                    requestLocation(latitude, longitude);
                 }
 
                 @Override
@@ -275,4 +324,94 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    private void requestLocation(double lan, double lon) {
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+
+        String baseUrl = "http://192.168.0.110:3000/get-loc";
+        String param1 = String.valueOf(lan);
+        String param2 = String.valueOf(lon);
+//
+//
+        String url = baseUrl + "?latitude=" + param1 + "&longitude=" + param2;
+//        String url ="http://192.168.0.108:3000/";
+
+        Toast.makeText(getApplicationContext(),"telah klik about" , Toast.LENGTH_LONG).show();
+
+        //String Request initialized
+        mStringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+//                if (response.length() >= 500) {
+//                    // Jika panjang response cukup, tampilkan substring
+//                    Toast.makeText(getApplicationContext(), "Response :" + response.substring(0, 500), Toast.LENGTH_LONG).show();
+//                } else {
+//                    // Jika panjang response kurang dari 500, tampilkan response utuh
+//                    Toast.makeText(getApplicationContext(), "Response :" + response, Toast.LENGTH_LONG).show();
+//                }
+                try {
+                    JSONObject jsonResponse = new JSONObject(response);
+
+                    String lokasi = jsonResponse.getString("lokasi");
+                    String deskripsi = jsonResponse.getString("deskripsi");
+
+                    Toast.makeText(MainActivity.this, "lokasi :" + lokasi + "deskripsi :" + deskripsi, Toast.LENGTH_LONG).show();
+                }
+                catch (JSONException e){
+                    Log.e("MYAPP", "unexpected JSON exception", e);
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(getApplicationContext(),"Response :" + error, Toast.LENGTH_LONG).show();
+                Log.i(TAG,"Error :" + error.toString());
+            }
+        });
+
+        queue.add(mStringRequest);
+    }
+    private void sendAndRequestResponse() {
+
+        //RequestQueue initialized
+//        mRequestQueue = Volley.newRequestQueue(this);
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+
+        String baseUrl = "http://192.168.0.110:3000/get-loc";
+        String param1 = "-7.290942279635451";
+        String param2 = "112.7967344248446";
+//
+//
+        String url = baseUrl + "?latitude=" + param1 + "&longitude=" + param2;
+//        String url ="http://192.168.0.108:3000/";
+
+        Toast.makeText(getApplicationContext(),"telah klik about" , Toast.LENGTH_LONG).show();
+
+        //String Request initialized
+        mStringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                if (response.length() >= 500) {
+                    // Jika panjang response cukup, tampilkan substring
+                    Toast.makeText(getApplicationContext(), "Response :" + response.substring(0, 500), Toast.LENGTH_LONG).show();
+                } else {
+                    // Jika panjang response kurang dari 500, tampilkan response utuh
+                    Toast.makeText(getApplicationContext(), "Response :" + response, Toast.LENGTH_LONG).show();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(getApplicationContext(),"Response :" + error, Toast.LENGTH_LONG).show();
+                Log.i(TAG,"Error :" + error.toString());
+            }
+        });
+
+        queue.add(mStringRequest);
+    }
 }
+

@@ -24,6 +24,7 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -35,6 +36,10 @@ public class KameraView extends AppCompatActivity {
     ImageButton capture, toggleFlash, flipCamera;
     private PreviewView previewView;
     int cameraFacing = CameraSelector.LENS_FACING_BACK;
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+
+
+
     private final ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), result -> {
         if (result) {
             startCamera(cameraFacing);
@@ -49,6 +54,7 @@ public class KameraView extends AppCompatActivity {
         capture = findViewById(R.id.capture);
         toggleFlash = findViewById(R.id.toggleFlash);
         flipCamera = findViewById(R.id.flipCamera);
+        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
 
         if (ContextCompat.checkSelfPermission(KameraView.this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             activityResultLauncher.launch(android.Manifest.permission.CAMERA);
@@ -64,7 +70,32 @@ public class KameraView extends AppCompatActivity {
             }
             startCamera(cameraFacing);
         });
+
+//        cameraProviderFuture.addListener(() -> {
+//            try {
+//                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+//                bindPreview(cameraProvider);
+//            } catch (ExecutionException | InterruptedException e) {
+//                // No errors need to be handled for this Future.
+//                // This should never be reached.
+//            }
+//        }, ContextCompat.getMainExecutor(this));
+
     }
+
+//    void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
+//        Preview preview = new Preview.Builder()
+//                .build();
+//
+//        CameraSelector cameraSelector = new CameraSelector.Builder()
+//                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+//                .build();
+//
+//        preview.setSurfaceProvider(previewView.getSurfaceProvider());
+//
+//        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, preview);
+//    }
+
 
     public void startCamera(int cameraFacing) {
         int aspectRatio = aspectRatio(previewView.getWidth(), previewView.getHeight());
@@ -105,16 +136,34 @@ public class KameraView extends AppCompatActivity {
     }
 
     public void takePicture(ImageCapture imageCapture) {
+//        long timestamp = System.currentTimeMillis();
+
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM);
-        ContentResolver resolver = getContentResolver();
+//        values.put(MediaStore.MediaColumns.DISPLAY_NAME, timestamp);
 
-        final File file = new File(getExternalFilesDir(Environment.DIRECTORY_DCIM), System.currentTimeMillis() + ".jpg");
+//      Menggunakan Environment.getExternalStoragePublicDirectory() untuk mendapatkan direktori DCIM pada penyimpanan eksternal umum.
+        File externalFilesDir = new File(Environment.DIRECTORY_PICTURES);
+
+        // Buat direktori jika belum ada
+        if (externalFilesDir != null && !externalFilesDir.exists()) {
+            externalFilesDir.mkdirs();
+        }
+
+        // Buat objek File untuk menyimpan gambar di direktori eksternal aplikasi
+        final File file = new File(externalFilesDir, System.currentTimeMillis() + ".jpg");
+// Sisanya dari kode tetap sama...
         Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-        Uri imageUri = resolver.insert(contentUri, values);
+        Uri imageUri = getContentResolver().insert(contentUri, values);
 
-        ImageCapture.OutputFileOptions outputFileOptions = new ImageCapture.OutputFileOptions.Builder(file).build();
+//        ImageCapture.OutputFileOptions outputFileOptions = new ImageCapture.OutputFileOptions.Builder(file).build();
+        ImageCapture.OutputFileOptions outputFileOptions =
+                new ImageCapture.OutputFileOptions.Builder(
+                        getContentResolver(),
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                        .build();
+
+
 
         imageCapture.takePicture(outputFileOptions, Executors.newCachedThreadPool(), new ImageCapture.OnImageSavedCallback() {
             @Override
@@ -122,7 +171,7 @@ public class KameraView extends AppCompatActivity {
                 // Update the MediaStore with the new image file
                 values.put(MediaStore.Images.Media.DATA, file.getAbsolutePath());
                 assert imageUri != null;
-                resolver.update(imageUri, values, null, null);
+                getContentResolver().update(imageUri, values, null, null);
 
                 runOnUiThread(() -> Toast.makeText(KameraView.this, "Image saved at: " + file.getPath(), Toast.LENGTH_SHORT).show());
                 startCamera(cameraFacing);
@@ -135,7 +184,6 @@ public class KameraView extends AppCompatActivity {
             }
         });
     }
-
 
 
 //    public void takePicture(ImageCapture imageCapture) {
