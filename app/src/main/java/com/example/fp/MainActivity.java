@@ -111,8 +111,8 @@ public class MainActivity extends AppCompatActivity {
         View aboutView = findViewById(R.id.about);
         aboutView.setOnClickListener(v -> sendAndRequestResponse());
 
-//        View galView = findViewById(R.id.galeriView);
-//        galView.setOnClickListener(v -> openGalleryView());
+//        View mainGrid = findViewById(R.id.about_bawah);
+//        mainGrid.setOnClickListener(v -> openMainGrid());
 
         View AlbView = findViewById(R.id.galeriView);
         AlbView.setOnClickListener(v -> openAlbumView());
@@ -164,11 +164,6 @@ public class MainActivity extends AppCompatActivity {
     private void openKameraView() {
         Intent kamera = new Intent(this, KameraView.class);
         startActivity(kamera);
-    }
-
-    private void openGalleryView(){
-        Intent gallery = new Intent(this, GaleriView.class);
-        startActivity(gallery);
     }
 
     private void openAlbumView(){

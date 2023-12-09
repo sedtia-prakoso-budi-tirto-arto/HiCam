@@ -63,6 +63,9 @@
             android:name=".AlbumDetailActivity"
             android:exported="true">
         </activity>
+
+
+
     </application>
 
 </manifest>
