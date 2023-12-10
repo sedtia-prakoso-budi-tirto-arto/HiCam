@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.View;
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.widget.TextView;
 import android.widget.Toast;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -55,10 +56,12 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_LOCATION = 3;
     private LocationManager locationManager;
     private LocationListener locationListener;
+    private LocationSaver locSaver;
     AlertDialog alertDialog;
 
     private RequestQueue mRequestQueue;
     private StringRequest mStringRequest;
+    private TextView showLocation;
 
     ArrayList<String> permissionsList;
     String[] permissionsStr = {
@@ -73,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
     ActivityResultLauncher<String[]> permissionsLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
                     new ActivityResultCallback<Map<String, Boolean>>() {
-                        @RequiresApi(api = Build.VERSION_CODES.M)
+//                        @RequiresApi(api = Build.VERSION_CODES.M)
                         @Override
                         public void onActivityResult(Map<String,Boolean> result) {
                             ArrayList<Boolean> list = new ArrayList<>(result.values());
@@ -111,11 +114,13 @@ public class MainActivity extends AppCompatActivity {
         View aboutView = findViewById(R.id.about);
         aboutView.setOnClickListener(v -> sendAndRequestResponse());
 
-//        View galView = findViewById(R.id.galeriView);
-//        galView.setOnClickListener(v -> openGalleryView());
+//        View mainGrid = findViewById(R.id.about_bawah);
+//        mainGrid.setOnClickListener(v -> openMainGrid());
 
         View AlbView = findViewById(R.id.galeriView);
         AlbView.setOnClickListener(v -> openAlbumView());
+
+        showLocation = findViewById(R.id.show_location);
 
         View imageViewGetLocation = findViewById(R.id.Peta);
 
@@ -162,13 +167,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openKameraView() {
-        Intent kamera = new Intent(this, KameraView.class);
-        startActivity(kamera);
-    }
-
-    private void openGalleryView(){
-        Intent gallery = new Intent(this, GaleriView.class);
-        startActivity(gallery);
+//        if(locSaver.getLocStatus()){
+            Intent kamera = new Intent(this, KameraView.class);
+            startActivity(kamera);
+//        }
+//        else{
+//            showToast("lokasi tidak tersedia atau izinkan kamera, lokasi, dan penyimpanan");
+//        }
     }
 
     private void openAlbumView(){
@@ -210,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
 
             LocationListener locationListener = new LocationListener() {
                 @Override
-                public void onLocationChanged(Location location) {
+                public void onLocationChanged(@NonNull Location location) {
                     // Mendapatkan longitude dan latitude
                     double latitude = location.getLatitude();
                     double longitude = location.getLongitude();
@@ -330,9 +335,11 @@ public class MainActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
 
 
-        String baseUrl = "http://192.168.0.110:3000/get-loc";
+        String baseUrl = "http://192.168.0.104:3000/get-loc";
         String param1 = String.valueOf(lan);
         String param2 = String.valueOf(lon);
+//        String param1 = "7.290942279635451";
+//        String param2 = "112.7967344248446";
 //
 //
         String url = baseUrl + "?latitude=" + param1 + "&longitude=" + param2;
@@ -348,10 +355,27 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     JSONObject jsonResponse = new JSONObject(response);
 
-                    String lokasi = jsonResponse.getString("lokasi");
-                    String deskripsi = jsonResponse.getString("deskripsi");
+                    String lokasi = null;
+                    String deskripsi = null;
+                    boolean locStatus = false;
 
-                    Toast.makeText(MainActivity.this, "lokasi :" + lokasi + "deskripsi :" + deskripsi, Toast.LENGTH_LONG).show();
+                    if(jsonResponse.getInt("status") == 200){
+                        lokasi = jsonResponse.getString("lokasi");
+                        deskripsi = jsonResponse.getString("deskripsi");
+                        locStatus = true;
+
+                        locSaver = new LocationSaver(lokasi, deskripsi, locStatus);
+                        showLocation.setText(locSaver.getLocName());
+                    }
+                    else {
+                        lokasi = jsonResponse.getString("message");
+                        deskripsi = "lokasi mungkin tidak terkenal";
+
+                        locSaver = new LocationSaver(lokasi, deskripsi, locStatus);
+                        showLocation.setText(locSaver.getLocName());
+                    }
+
+                    Toast.makeText(MainActivity.this, "lokasi :" + lokasi + "\n" +" deskripsi :" + deskripsi, Toast.LENGTH_LONG).show();
                 }
                 catch (JSONException e){
                     Log.e("MYAPP", "unexpected JSON exception", e);
@@ -375,8 +399,8 @@ public class MainActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
 
 
-        String baseUrl = "http://192.168.0.110:3000/get-loc";
-        String param1 = "-7.290942279635451";
+        String baseUrl = "http://192.168.0.104:3000/get-loc";
+        String param1 = "7.290942279635451";
         String param2 = "112.7967344248446";
 //
 //
@@ -406,6 +430,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         queue.add(mStringRequest);
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }
 
