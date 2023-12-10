@@ -1,10 +1,13 @@
 package com.example.fp;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,11 +15,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 
 public class AlbumView extends AppCompatActivity {
-
+    private DatabaseManager databaseManager;
+    private TextView scrollText;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.album_view);
+
 
         LinearLayout layout = findViewById(R.id.albumLayout);
 
@@ -53,5 +58,41 @@ public class AlbumView extends AppCompatActivity {
         Intent intent = new Intent(this, AlbumDetailActivity.class);
         intent.putExtra("folderName", folderName);
         startActivity(intent);
+    }
+
+    private void showDescription(String folderName) {
+        Cursor dbGetDesc = databaseManager.getDesc(folderName);
+
+        String deskripsi = null;
+        if (dbGetDesc.moveToFirst()) {
+            String deskripsiColumnName = "deskripsi";
+
+            int deskripsiColumnIndex = dbGetDesc.getColumnIndex(deskripsiColumnName);
+
+            if (deskripsiColumnIndex != -1) {
+                deskripsi = dbGetDesc.getString(deskripsiColumnIndex);
+                Log.d("Deskripsi", deskripsi);
+
+                if (scrollText != null) {
+                    scrollText.setText(deskripsi);
+                } else {
+                    Log.e("Error", "TextView not found in layout");
+                }
+            } else {
+                Log.e("Error", "Column not found: " + deskripsiColumnName);
+                if (scrollText != null) {
+                    scrollText.setText("Album belum memiliki deskripsi");
+                } else {
+                    Log.e("Error", "TextView not found in layout");
+                }
+            }
+        } else {
+            Log.e("Error", "No data found for folder: " + folderName);
+            if (scrollText != null) {
+                scrollText.setText("Tidak ada deskripsi untuk album ini");
+            } else {
+                Log.e("Error", "TextView not found in layout");
+            }
+        }
     }
 }

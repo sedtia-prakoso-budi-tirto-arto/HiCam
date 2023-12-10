@@ -1,11 +1,13 @@
 package com.example.fp;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -27,18 +29,20 @@ import java.util.List;
 
 public class AlbumDetailActivity extends AppCompatActivity {
     GridView grid;
-
+    TextView scrollText;
+    DatabaseManager databaseManager;
     List<Uri> imageUris;
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_album_detail);
 
+        databaseManager = new DatabaseManager(this);
 
         // Menerima nama folder dari intent
         String folderName = getIntent().getStringExtra("folderName");
 //        folderNameTextView.setText(folderName);
-
 
         imageUris = getImagesInFolder(folderName);
 
@@ -46,20 +50,48 @@ public class AlbumDetailActivity extends AppCompatActivity {
             CustomGrid adapter = new CustomGrid(AlbumDetailActivity.this, imageUris);
             grid = (GridView) findViewById(R.id.albumDetailLayout);
             grid.setAdapter(adapter);
-            grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            grid.setOnItemClickListener((parent, view, position, id) -> showImageDialog(imageUris.get(position)));
 
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    showImageDialog(imageUris.get(position));
+            scrollText = (TextView) findViewById(R.id.scrollingText);
+            showToast(folderName);
+            Cursor dbGetDesc = databaseManager.getDesc(folderName);
 
+            String deskripsi = null;
+            if (dbGetDesc.moveToFirst()){
+                String deskripsiColumnName = "deskripsi";
+
+                int deskripsiColumnIndex = dbGetDesc.getColumnIndex(deskripsiColumnName);
+
+                if (deskripsiColumnIndex != -1) {
+
+                    deskripsi = dbGetDesc.getString(deskripsiColumnIndex);
+                    // Lakukan sesuatu dengan nilai "deskripsi"
+                    Log.d("Deskripsi", deskripsi);
+//                                @SuppressLint("Range") String dbLoc = dbLocAndDesc.getString(dbLocAndDesc.getColumnIndex("lokasi"));
+//                    @SuppressLint("Range") String dbDesc = dbGetDesc.getString(dbGetDesc.getColumnIndex("deskripsi"));
+//
+                    if (scrollText != null) {
+                        Log.d("scroll text", "scroll text berhasil");
+                        scrollText.setText(deskripsi);
+                    } else {
+                        Log.e("Error", "TextView not found in grid item layout");
+                    }
                 }
-            });
+                else {
+                    Log.e("Error", "Column not found: " + deskripsiColumnName);
+                    scrollText.setText("album belum memiliki deskripsi");
+                }
+            }
+            else {
+                showToast("tidak ada db");
+            }
 
         }
+
+
         else {
             showToast("Tidak ada gambar terdeteksi");
         }
-
     }
 
     private void showImageDialog(Uri imageUri) {

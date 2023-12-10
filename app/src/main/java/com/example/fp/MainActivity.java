@@ -11,6 +11,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -50,6 +53,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -57,11 +61,10 @@ public class MainActivity extends AppCompatActivity {
     private LocationManager locationManager;
     private LocationListener locationListener;
     private LocationSaver locSaver;
+    private DatabaseManager databaseManager;
     AlertDialog alertDialog;
-
-    private RequestQueue mRequestQueue;
     private StringRequest mStringRequest;
-    private TextView showLocation;
+    private TextView showLocation, showDbLoc, showDbDesc;
 
     ArrayList<String> permissionsList;
     String[] permissionsStr = {
@@ -121,14 +124,19 @@ public class MainActivity extends AppCompatActivity {
         AlbView.setOnClickListener(v -> openAlbumView());
 
         showLocation = findViewById(R.id.show_location);
+        showDbLoc = findViewById(R.id.db_loc);
+        showDbDesc = findViewById(R.id.db_desc);
 
         View imageViewGetLocation = findViewById(R.id.Peta);
-
         imageViewGetLocation.setOnClickListener(v -> requestLocationUpdates());
 
+
+        //request izin
         permissionsList = new ArrayList<>();
         permissionsList.addAll(Arrays.asList(permissionsStr));
         askForPermissions(permissionsList);
+
+        databaseManager = new DatabaseManager(this);
 
     }
 
@@ -226,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
 
                     // Hentikan pembaruan lokasi setelah mendapatkan satu pembaruan
                     locationManager.removeUpdates(this);
-//                    requestLocation(latitude, longitude);
+                    requestLocation(latitude, longitude);
                 }
 
                 @Override
@@ -335,7 +343,7 @@ public class MainActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
 
 
-        String baseUrl = "http://192.168.0.104:3000/get-loc";
+        String baseUrl = "http://192.168.0.101:3000/get-loc";
         String param1 = String.valueOf(lan);
         String param2 = String.valueOf(lon);
 //        String param1 = "7.290942279635451";
@@ -366,6 +374,38 @@ public class MainActivity extends AppCompatActivity {
 
                         locSaver = new LocationSaver(lokasi, deskripsi, locStatus);
                         showLocation.setText(locSaver.getLocName());
+
+                        databaseManager.insertLocAndDesc(lokasi, deskripsi);
+
+                        Cursor dbLocAndDesc = databaseManager.getDesc(lokasi);
+
+                        if (dbLocAndDesc.moveToFirst()){
+                            String deskripsiColumnName = "deskripsi";
+
+                            int deskripsiColumnIndex = dbLocAndDesc.getColumnIndex(deskripsiColumnName);
+
+                            if (deskripsiColumnIndex != -1) {
+
+                                deskripsi = dbLocAndDesc.getString(deskripsiColumnIndex);
+                                // Lakukan sesuatu dengan nilai "deskripsi"
+                                Log.d("Lokasi", lokasi);
+                                Log.d("Deskripsi", deskripsi);
+//                                @SuppressLint("Range") String dbLoc = dbLocAndDesc.getString(dbLocAndDesc.getColumnIndex("lokasi"));
+                                @SuppressLint("Range") String dbDesc = dbLocAndDesc.getString(dbLocAndDesc.getColumnIndex("deskripsi"));
+//
+                                showDbLoc.setText(locSaver.getLocName());
+                                showDbDesc.setText(dbDesc);
+                            }
+                            else {
+                                Log.e("Error", "Column not found: " + deskripsiColumnName);
+                                return;
+                            }
+                        }
+                        else {
+                            Log.e("Error", "No data found");
+                        }
+                        dbLocAndDesc.close();
+
                     }
                     else {
                         lokasi = jsonResponse.getString("message");
@@ -435,5 +475,7 @@ public class MainActivity extends AppCompatActivity {
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
+
+
 }
 

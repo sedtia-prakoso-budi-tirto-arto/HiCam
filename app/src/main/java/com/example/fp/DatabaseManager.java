@@ -14,27 +14,42 @@ public class DatabaseManager {
         database = dbHelper.getWritableDatabase();
     }
 
+
     // Metode untuk menambahkan data
-    public void insertData(String name) {
+    public void insertLocAndDesc(String lokasi, String deskripsi) {
+        Cursor cursor = getDesc(lokasi);
+        if (cursor.getCount() > 0) {
+            // Data dengan lokasi yang sama sudah ada, lakukan tindakan yang sesuai (misalnya, tidak menambahkannya lagi)
+            cursor.close();
+            return;  // Keluar dari metode
+        }
+
+//        cursor.close();
         ContentValues values = new ContentValues();
-        values.put("Name", name);
-        database.insert("MyTable", null, values);
+        values.put("lokasi", lokasi);
+        values.put("deskripsi", deskripsi);
+        database.insert("detail_lokasi", null, values);
     }
 
     // Metode untuk membaca data
     public Cursor getAllData() {
-        return database.rawQuery("SELECT * FROM MyTable", null);
+        return database.rawQuery("SELECT * FROM detail_lokasi", null);
+    }
+
+    public Cursor getDesc(String lokasi) {
+        return database.rawQuery("SELECT deskripsi From detail_lokasi WHERE lokasi = ?", new String[]{lokasi});
     }
 
     // Metode untuk memperbarui data
     public void updateData(int id, String newName) {
         ContentValues values = new ContentValues();
         values.put("Name", newName);
-        database.update("MyTable", values, "ID=?", new String[]{String.valueOf(id)});
+        database.update("detail_lokasi", values, "ID=?", new String[]{String.valueOf(id)});
     }
 
     // Metode untuk menghapus data
     public void deleteData(int id) {
-        database.delete("MyTable", "ID=?", new String[]{String.valueOf(id)});
+        database.delete("detail_lokasi", "ID=?", new String[]{String.valueOf(id)});
     }
+
 }
