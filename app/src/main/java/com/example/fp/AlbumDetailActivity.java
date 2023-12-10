@@ -1,10 +1,14 @@
 package com.example.fp;
 
+import android.app.Dialog;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.View;
+import android.view.Window;
+import android.widget.AdapterView;
 import android.widget.GridLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -13,6 +17,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.bumptech.glide.Glide;
+import com.github.chrisbanes.photoview.PhotoView;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -39,6 +46,15 @@ public class AlbumDetailActivity extends AppCompatActivity {
             CustomGrid adapter = new CustomGrid(AlbumDetailActivity.this, imageUris);
             grid = (GridView) findViewById(R.id.albumDetailLayout);
             grid.setAdapter(adapter);
+            grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    showImageDialog(imageUris.get(position));
+
+                }
+            });
+
         }
         else {
             showToast("Tidak ada gambar terdeteksi");
@@ -46,7 +62,18 @@ public class AlbumDetailActivity extends AppCompatActivity {
 
     }
 
+    private void showImageDialog(Uri imageUri) {
+        Dialog dialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.grid_item_layout);
 
+        PhotoView photoView = dialog.findViewById(R.id.photo_view);
+        Glide.with(this)
+                .load(imageUri)
+                .into(photoView);
+
+        dialog.show();
+    }
 
     private List<Uri> getImagesInFolder(String folderName) {
         List<Uri> imageUris = new ArrayList<>();

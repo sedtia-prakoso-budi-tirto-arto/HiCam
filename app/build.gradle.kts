@@ -43,5 +43,6 @@ dependencies {
     implementation("androidx.camera:camera-view:1.2.2")
     implementation("com.android.volley:volley:1.2.1")
     implementation("com.github.bumptech.glide:glide:4.13.2")
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.13.2")
 }

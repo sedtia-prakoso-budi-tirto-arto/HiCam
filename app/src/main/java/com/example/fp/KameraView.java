@@ -5,9 +5,11 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -29,7 +31,11 @@ import androidx.lifecycle.LifecycleOwner;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class KameraView extends AppCompatActivity {
@@ -136,36 +142,50 @@ public class KameraView extends AppCompatActivity {
     }
 
     public void takePicture(ImageCapture imageCapture) {
-//        long timestamp = System.currentTimeMillis();
+        long timestamp = System.currentTimeMillis();
+        String formattedDate = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String fileName = "image_" + formattedDate + ".jpg";
 
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-//        values.put(MediaStore.MediaColumns.DISPLAY_NAME, timestamp);
 
-//      Menggunakan Environment.getExternalStoragePublicDirectory() untuk mendapatkan direktori DCIM pada penyimpanan eksternal umum.
-        File externalFilesDir = new File(Environment.DIRECTORY_PICTURES);
 
-        // Buat direktori jika belum ada
-        if (externalFilesDir != null && !externalFilesDir.exists()) {
-            externalFilesDir.mkdirs();
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "hicam";
+            File hicamDir = new File(path);
+            if(!hicamDir.exists()){
+                if (hicamDir.mkdir()){
+                    Log.d("KameraView", "Folder 'hicam' created successfully");
+                }
+                else {
+                    Log.e("KameraView", "Failed to create folder 'hicam'");
+                }
+            }
+            else {
+                Log.d("KameraView", "Folder 'hicam' already exists");
+            }
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/hicam/test");
+        } else {
+            String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "anjay";
+            File outputDir = new File(path);
+            outputDir.mkdirs();
         }
 
-        // Buat objek File untuk menyimpan gambar di direktori eksternal aplikasi
-        final File file = new File(externalFilesDir, System.currentTimeMillis() + ".jpg");
-// Sisanya dari kode tetap sama...
+
         Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         Uri imageUri = getContentResolver().insert(contentUri, values);
 
-//        ImageCapture.OutputFileOptions outputFileOptions = new ImageCapture.OutputFileOptions.Builder(file).build();
         ImageCapture.OutputFileOptions outputFileOptions =
                 new ImageCapture.OutputFileOptions.Builder(
                         getContentResolver(),
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
                         .build();
 
-
-
+        values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), fileName);
+        Log.d("KameraView", "Before takePicture");
         imageCapture.takePicture(outputFileOptions, Executors.newCachedThreadPool(), new ImageCapture.OnImageSavedCallback() {
+
             @Override
             public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
                 // Update the MediaStore with the new image file
@@ -175,16 +195,21 @@ public class KameraView extends AppCompatActivity {
 
                 runOnUiThread(() -> Toast.makeText(KameraView.this, "Image saved at: " + file.getPath(), Toast.LENGTH_SHORT).show());
                 startCamera(cameraFacing);
+                Log.d("KameraView", "onImageSaved");
             }
 
             @Override
             public void onError(@NonNull ImageCaptureException exception) {
+                Log.e("KameraView", "onError: " + exception.getMessage());
                 runOnUiThread(() -> Toast.makeText(KameraView.this, "Failed to save: " + exception.getMessage(), Toast.LENGTH_SHORT).show());
                 startCamera(cameraFacing);
             }
         });
     }
 
+    private Executor getExecutor() {
+        return ContextCompat.getMainExecutor(this);
+    }
 
 //    public void takePicture(ImageCapture imageCapture) {
 //        final File file = new File(getExternalFilesDir(null), System.currentTimeMillis() + ".jpg");
