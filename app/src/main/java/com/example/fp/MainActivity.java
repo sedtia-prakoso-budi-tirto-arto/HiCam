@@ -56,6 +56,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_LOCATION = 3;
     private LocationManager locationManager;
@@ -65,11 +66,12 @@ public class MainActivity extends AppCompatActivity {
     AlertDialog alertDialog;
     private StringRequest mStringRequest;
     private TextView showLocation, showDbLoc, showDbDesc;
-    private String lokasi;
+    private String lokasi, latitude, longitude;
 
     ArrayList<String> permissionsList;
     String[] permissionsStr = {
             Manifest.permission.CAMERA,
+//            Manifest.permission.READ_MEDIA_IMAGES,
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -115,18 +117,11 @@ public class MainActivity extends AppCompatActivity {
         View camView = findViewById(R.id.camView);
         camView.setOnClickListener(v -> openKameraView());
 
-        View aboutView = findViewById(R.id.about);
-        aboutView.setOnClickListener(v -> sendAndRequestResponse());
-
-//        View mainGrid = findViewById(R.id.about_bawah);
-//        mainGrid.setOnClickListener(v -> openMainGrid());
 
         View AlbView = findViewById(R.id.galeriView);
         AlbView.setOnClickListener(v -> openAlbumView());
 
         showLocation = findViewById(R.id.show_location);
-        showDbLoc = findViewById(R.id.db_loc);
-        showDbDesc = findViewById(R.id.db_desc);
 
         View imageViewGetLocation = findViewById(R.id.Peta);
         imageViewGetLocation.setOnClickListener(v -> requestLocationUpdates());
@@ -189,6 +184,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void openMapsView() {
+        if(locSaver.getLocStatus()){
+            Intent kamera = new Intent(this, MapsActivity.class);
+            kamera.putExtra("latitude", lokasi);
+            startActivity(kamera);
+        }
+        else{
+            showToast("lokasi tidak tersedia atau izinkan kamera, lokasi, dan penyimpanan");
+        }
+    }
     private void openAlbumView(){
         Intent album = new Intent(this, AlbumView.class);
         startActivity(album);
@@ -398,8 +403,8 @@ public class MainActivity extends AppCompatActivity {
 //                                @SuppressLint("Range") String dbLoc = dbLocAndDesc.getString(dbLocAndDesc.getColumnIndex("lokasi"));
                                 @SuppressLint("Range") String dbDesc = dbLocAndDesc.getString(dbLocAndDesc.getColumnIndex("deskripsi"));
 //
-                                showDbLoc.setText(locSaver.getLocName());
-                                showDbDesc.setText(dbDesc);
+//                                showDbLoc.setText(locSaver.getLocName());
+//                                showDbDesc.setText(dbDesc);
                                 initLokasi(locSaver.getLocName());
                             }
                             else {
@@ -438,45 +443,7 @@ public class MainActivity extends AppCompatActivity {
 
         queue.add(mStringRequest);
     }
-    private void sendAndRequestResponse() {
 
-        //RequestQueue initialized
-//        mRequestQueue = Volley.newRequestQueue(this);
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-
-        String baseUrl = "http://192.168.1.4:3000/get-loc";
-        String param1 = "7.290942279635451";
-        String param2 = "112.7967344248446";
-//
-//
-        String url = baseUrl + "?latitude=" + param1 + "&longitude=" + param2;
-//        String url ="http://192.168.0.108:3000/";
-
-        Toast.makeText(getApplicationContext(),"telah klik about" , Toast.LENGTH_LONG).show();
-
-        //String Request initialized
-        mStringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                if (response.length() >= 500) {
-                    // Jika panjang response cukup, tampilkan substring
-                    Toast.makeText(getApplicationContext(), "Response :" + response.substring(0, 500), Toast.LENGTH_LONG).show();
-                } else {
-                    // Jika panjang response kurang dari 500, tampilkan response utuh
-                    Toast.makeText(getApplicationContext(), "Response :" + response, Toast.LENGTH_LONG).show();
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(getApplicationContext(),"Response :" + error, Toast.LENGTH_LONG).show();
-                Log.i(TAG,"Error :" + error.toString());
-            }
-        });
-
-        queue.add(mStringRequest);
-    }
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
