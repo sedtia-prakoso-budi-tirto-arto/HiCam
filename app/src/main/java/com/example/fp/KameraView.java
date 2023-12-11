@@ -3,6 +3,7 @@ package com.example.fp;
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -42,9 +43,10 @@ public class KameraView extends AppCompatActivity {
     ImageButton capture, toggleFlash, flipCamera;
     private PreviewView previewView;
     int cameraFacing = CameraSelector.LENS_FACING_BACK;
+    private LocationSaver locationSaver;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
 
-
+    private String lokasi;
 
     private final ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), result -> {
         if (result) {
@@ -76,6 +78,16 @@ public class KameraView extends AppCompatActivity {
             }
             startCamera(cameraFacing);
         });
+
+        Intent intent = getIntent();
+        if (intent != null) {
+            this.lokasi = intent.getStringExtra("lokasi");
+
+
+            // Sekarang Anda dapat menggunakan data ini sesuai kebutuhan Anda
+            // Misalnya, menampilkan data di antarmuka pengguna atau melakukan operasi lain.
+        }
+
 
 //        cameraProviderFuture.addListener(() -> {
 //            try {
@@ -142,16 +154,19 @@ public class KameraView extends AppCompatActivity {
     }
 
     public void takePicture(ImageCapture imageCapture) {
+
+        
+
         long timestamp = System.currentTimeMillis();
         String formattedDate = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String fileName = "image_" + formattedDate + ".jpg";
 
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-
+        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "hicam";
 
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "hicam";
+            path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "hicam";
             File hicamDir = new File(path);
             if(!hicamDir.exists()){
                 if (hicamDir.mkdir()){
@@ -164,9 +179,9 @@ public class KameraView extends AppCompatActivity {
             else {
                 Log.d("KameraView", "Folder 'hicam' already exists");
             }
-            values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/hicam/test");
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/hicam/" + lokasi);
         } else {
-            String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "anjay";
+            path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "default";
             File outputDir = new File(path);
             outputDir.mkdirs();
         }
@@ -182,7 +197,7 @@ public class KameraView extends AppCompatActivity {
                         .build();
 
         values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), fileName);
+        File file = new File(path);
         Log.d("KameraView", "Before takePicture");
         imageCapture.takePicture(outputFileOptions, Executors.newCachedThreadPool(), new ImageCapture.OnImageSavedCallback() {
 
@@ -193,7 +208,7 @@ public class KameraView extends AppCompatActivity {
                 assert imageUri != null;
                 getContentResolver().update(imageUri, values, null, null);
 
-                runOnUiThread(() -> Toast.makeText(KameraView.this, "Image saved at: " + file.getPath(), Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(KameraView.this, "Image saved at: " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show());
                 startCamera(cameraFacing);
                 Log.d("KameraView", "onImageSaved");
             }

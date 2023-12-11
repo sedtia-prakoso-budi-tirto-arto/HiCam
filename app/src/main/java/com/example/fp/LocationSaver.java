@@ -1,6 +1,9 @@
 package com.example.fp;
 
-public class LocationSaver {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class LocationSaver implements Parcelable {
     private String locName;
     private String locDesc;
 
@@ -29,5 +32,34 @@ public class LocationSaver {
 
     public void setLocDesc(String locDesc){
         this.locDesc = locDesc;
+    }
+    protected LocationSaver(Parcel in) {
+        locName = in.readString();
+        locDesc = in.readString();
+        locStatus = in.readByte() != 0;
+    }
+
+    public static final Parcelable.Creator<LocationSaver> CREATOR = new Parcelable.Creator<LocationSaver>() {
+        @Override
+        public LocationSaver createFromParcel(Parcel in) {
+            return new LocationSaver(in);
+        }
+
+        @Override
+        public LocationSaver[] newArray(int size) {
+            return new LocationSaver[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(locName);
+        dest.writeString(locDesc);
+        dest.writeByte((byte) (locStatus ? 1 : 0));
     }
 }

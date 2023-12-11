@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     AlertDialog alertDialog;
     private StringRequest mStringRequest;
     private TextView showLocation, showDbLoc, showDbDesc;
+    private String lokasi;
 
     ArrayList<String> permissionsList;
     String[] permissionsStr = {
@@ -140,6 +141,9 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void initLokasi(String lokasi) {
+        this.lokasi = lokasi;
+    }
 
     private void askForPermissions(ArrayList<String> permissionsList) {
         String[] newPermissionStr = new String[permissionsList.size()];
@@ -175,13 +179,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openKameraView() {
-//        if(locSaver.getLocStatus()){
+        if(locSaver.getLocStatus()){
             Intent kamera = new Intent(this, KameraView.class);
+            kamera.putExtra("lokasi", lokasi);
             startActivity(kamera);
-//        }
-//        else{
-//            showToast("lokasi tidak tersedia atau izinkan kamera, lokasi, dan penyimpanan");
-//        }
+        }
+        else{
+            showToast("lokasi tidak tersedia atau izinkan kamera, lokasi, dan penyimpanan");
+        }
     }
 
     private void openAlbumView(){
@@ -343,7 +348,7 @@ public class MainActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
 
 
-        String baseUrl = "http://192.168.0.101:3000/get-loc";
+        String baseUrl = "http://192.168.1.4:3000/get-loc";
         String param1 = String.valueOf(lan);
         String param2 = String.valueOf(lon);
 //        String param1 = "7.290942279635451";
@@ -395,6 +400,7 @@ public class MainActivity extends AppCompatActivity {
 //
                                 showDbLoc.setText(locSaver.getLocName());
                                 showDbDesc.setText(dbDesc);
+                                initLokasi(locSaver.getLocName());
                             }
                             else {
                                 Log.e("Error", "Column not found: " + deskripsiColumnName);
@@ -439,7 +445,7 @@ public class MainActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
 
 
-        String baseUrl = "http://192.168.0.104:3000/get-loc";
+        String baseUrl = "http://192.168.1.4:3000/get-loc";
         String param1 = "7.290942279635451";
         String param2 = "112.7967344248446";
 //
