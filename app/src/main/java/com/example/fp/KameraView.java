@@ -1,7 +1,6 @@
 package com.example.fp;
 
 import android.Manifest;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -11,6 +10,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.ScaleGestureDetector;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -27,7 +27,6 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
